@@ -2,7 +2,7 @@
 name = "tulip-net"
 description = "WireGuard VPN builder"
 license = "BSD-3-Clause"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 
 [[bin]]

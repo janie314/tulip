@@ -13,16 +13,20 @@ to the horrors that are OpenVPN and IPSec, it's a work of art.
 
 The tulip. CLI.
 
-At the application level, Tulip is a thin abstraction over Wireguard. At the
-network level, Tulip is Wireguard.
-
-[[_TOC_]]
+At the application level, Tulip is a thin abstraction over WireGuard. At the
+network level, Tulip is WireGuard.
 
 # Dependencies
 
 [WireGuard](https://www.wireguard.com/),
 [Rust](https://www.rust-lang.org/learn/get-started), what's in the `Cargo.toml`,
 `make`, `sudo`.
+
+# Installation
+
+```shell
+cargo install tulip-net
+```
 
 # Usage for Tulip Network Users
 
@@ -61,7 +65,7 @@ E.g., if your Tulip network is called "Sandringham", then
   },
   "public_endpoints": [
     {
-      "name": "appleton",
+      "name": "highgrove",
       "vpn_ip": "10.0.0.3",
       "public_hostname": "vpn.example.com",
       "public_key": "lNYWO/sIEmu51/2uBZQfaECU9DTw+tBl8IsgMM+XjVU=",
