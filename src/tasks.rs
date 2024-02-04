@@ -1,5 +1,4 @@
 use qrcode_generator::QrCodeEcc;
-
 use crate::{
     id,
     misc::{create_private_file, exec_silent, set_kernel_parameter},
@@ -21,13 +20,13 @@ pub fn debug(onoff: Option<String>) {
             "/sys/kernel/debug/dynamic_debug/control",
             "module wireguard +p",
         )
-        .expect("enable forwarding problem");
+        .expect("could not turn on wg debug mode");
     } else if cmd == "off" {
         set_kernel_parameter(
             "/sys/kernel/debug/dynamic_debug/control",
             "module wireguard -p",
         )
-        .expect("enable kernel param problem 2");
+        .expect("could not turn off wg debug mode");
     } else {
         eprintln!("argument to debug must be \"on\" or \"off\"")
     }
@@ -44,21 +43,21 @@ pub fn start_network(
     phonebook_path: Option<String>,
     timeout: u64,
 ) {
-    let network = network::read_network_file(&network_path).expect("reading network file problem");
-    let priv_id = id::read_id_file(&priv_id_path).expect("priv-id problem");
+    let network = network::read_network_file(&network_path).expect("could not read network file");
+    let priv_id = id::read_id_file(&priv_id_path).expect("could not read private id");
     let phonebook = if server {
         let path = network::phonebook::read_phonebook_file(phonebook_path.unwrap_or_default())
-            .expect("reading phonebook file problem");
+            .expect("could not read phonebook");
         Some(path)
     } else {
         None
     };
-    network::start(network, priv_id, server, phonebook, timeout).expect("start network problem");
+    network::start(network, priv_id, server, phonebook, timeout).expect("could not start network");
 }
 
 pub fn stop_network(network_path: String) {
-    let network = network::read_network_file(&network_path).expect("reading network file problem");
-    network::stop(network).expect("stop network problem");
+    let network = network::read_network_file(&network_path).expect("could not read network file");
+    network::stop(network).expect("could not stop network");
 }
 
 pub fn write_network_json_file(
@@ -68,18 +67,18 @@ pub fn write_network_json_file(
     phonebook_path: String,
 ) {
     let phonebook =
-        phonebook::read_phonebook_file(phonebook_path).expect("reading public_id.json issue");
+        phonebook::read_phonebook_file(phonebook_path).expect("could not read public id");
     match phonebook.get(&name) {
         Some(user) => {
             let mut net_conf =
-                network::read_network_file(&network_path).expect("reading network file problem");
+                network::read_network_file(&network_path).expect("could not read network file");
             net_conf.user.name = name.clone();
             net_conf.user.vpn_ip = user.vpn_ip.clone();
-            let net_conf_json = serde_json::to_string_pretty(&net_conf).expect("json issue");
+            let net_conf_json = serde_json::to_string_pretty(&net_conf).expect("could not format json");
             let out_path_aux = Path::new(&out_dir).join(format!("{}_tulip_network.json", &name));
-            let out_path = out_path_aux.to_str().expect("path concat issue");
-            let out_file = create_private_file(&out_path).expect("couldn't create output file");
-            writeln!(&out_file, "{}", &net_conf_json).expect("couldn't write the json file");
+            let out_path = out_path_aux.to_str().expect("could not concatenate paths");
+            let out_file = create_private_file(&out_path).expect("could not create private id");
+            writeln!(&out_file, "{}", &net_conf_json).expect("could not write network file");
         }
         None => {
             panic!("{} is not a user", &name);
@@ -88,15 +87,15 @@ pub fn write_network_json_file(
 }
 
 pub fn write_wg_conf_file(kind: &str, out_dir: &str, network_path: &str, priv_id_path: &str) {
-    let priv_id = id::read_id_file(priv_id_path).expect("reading public_id.json issue");
-    let network = network::read_network_file(&network_path).expect("network reading problem");
+    let priv_id = id::read_id_file(priv_id_path).expect("could not reading public id");
+    let network = network::read_network_file(&network_path).expect("could not read network file");
     let phonebook = phonebook::curl_phonebook_list(&network.public_endpoints, 3)
-        .expect("couldn't curl phonebook");
+        .expect("could not curl phonebook");
     let name = priv_id.name.clone();
     match phonebook.get(&name) {
         Some(user) => {
             let mut net_conf =
-                network::read_network_file(&network_path).expect("reading network file problem");
+                network::read_network_file(&network_path).expect("could not read network file");
             net_conf.user.name = name.clone();
             net_conf.user.vpn_ip = user.vpn_ip.clone();
             let mut wg_conf = net_conf.wg_conf_section(&NetworkWgConfInput {
@@ -115,16 +114,16 @@ pub fn write_wg_conf_file(kind: &str, out_dir: &str, network_path: &str, priv_id
                 .expect("qr code issues");
                 let out_path_aux = Path::new("/tmp").join(format!("{}_tulip_network.svg", &name));
                 let out_path = out_path_aux.to_str().expect("path concat issue");
-                let out_file = create_private_file(&out_path).expect("couldn't make out file");
-                write!(&out_file, "{}", &qr).expect("couldn't write the network file");
+                let out_file = create_private_file(&out_path).expect("could not create private id");
+                write!(&out_file, "{}", &qr).expect("could not write network file");
                 println!("opening {} with your default SVG viewer", &out_path);
-                exec_silent("xdg-open", [&out_path]).expect("couldn't open the svg");
+                exec_silent("xdg-open", [&out_path]).expect("could not open svg");
             } else {
                 let out_path_aux =
                     Path::new(&out_dir).join(format!("{}_tulip_network.conf", &name));
                 let out_path = out_path_aux.to_str().expect("path concat issue");
-                let out_file = create_private_file(&out_path).expect("couldn't make out file");
-                write!(&out_file, "{}", &wg_conf).expect("couldn't write the network file");
+                let out_file = create_private_file(&out_path).expect("could not create private id");
+                write!(&out_file, "{}", &wg_conf).expect("could not write network file");
                 println!("wrote to {}", &out_path);
             }
         }

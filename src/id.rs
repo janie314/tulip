@@ -5,7 +5,6 @@ use std::{
     path::Path,
     process::{Command, Stdio},
 };
-
 use crate::misc::create_private_file;
 
 #[derive(Debug)]
@@ -35,12 +34,14 @@ impl From<std::string::FromUtf8Error> for IdError {
     }
 }
 
+/// Returns a WireGuard private key, as a vector of u8 chars.
 fn genkey() -> Result<Vec<u8>, IdError> {
     let mut priv_key = Command::new("wg").arg("genkey").output()?.stdout;
     priv_key.pop();
     Ok(priv_key)
 }
 
+/// Given a WireGuard private key, returns its corresponding public key.
 fn priv_key_to_pub_key(input: &Vec<u8>) -> Result<String, IdError> {
     let mut pub_key_cmd = Command::new("wg")
         .arg("pubkey")
@@ -57,12 +58,14 @@ fn priv_key_to_pub_key(input: &Vec<u8>) -> Result<String, IdError> {
     Ok(res)
 }
 
+/// Represents a Tulip private id.
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PrivId {
     pub name: String,
     pub private_key: String,
 }
 
+/// Represents a Tulip public id.
 #[derive(Serialize, Debug)]
 pub struct PubId {
     pub name: String,
