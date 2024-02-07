@@ -4,11 +4,12 @@ use std::{
     fs::{self, OpenOptions},
     io::{self, Write},
     os::unix::prelude::OpenOptionsExt,
+    path::PathBuf,
     process::{Command, Stdio},
     thread::sleep,
 };
 
-pub fn create_private_file(path: &str) -> Result<fs::File, io::Error> {
+pub fn create_private_file(path: &PathBuf) -> Result<fs::File, io::Error> {
     OpenOptions::new()
         .create(true)
         .read(true)

@@ -7,10 +7,7 @@ use crate::{
     misc::{countdown, create_private_file, exec},
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{self},
-    io::Write,
-};
+use std::{fs, io::Write, path::Path};
 pub mod phonebook;
 pub mod wg_conf;
 
@@ -174,7 +171,7 @@ fn add_wg_interface(
             &network_name,
         ],
     )?;
-    let path = format!("/tmp/{}.conf", &network_name);
+    let path = Path::new("/tmp").join(format!("{}.conf", &network_name));
     let mut wg_conf = create_private_file(&path)?;
     /*
      * Add public endpoints to the WireGuard config

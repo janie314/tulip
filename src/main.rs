@@ -25,6 +25,9 @@ enum Commands {
         /// The nickname associated with your Tulip ID (e.g. miles_spiderkid)
         #[arg(short, long)]
         name: String,
+        /// Output directory for the ID Files
+        #[arg(short, long, default_value_t = String::from("./"))]
+        output: String,
     },
     /// Add a new user to a Tulip network. For use by a Tulip network admin
     AddUser {
@@ -41,7 +44,7 @@ enum Commands {
         #[arg(short, long)]
         phonebook: String,
     },
-    /// Generate a WireGuard config for a Tulip user. For use by Tulip network user
+    /// Generate a WireGuard config from a Tulip configuration. For use by Tulip network user
     GenWgConf {
         /// Kind of network config (qr or wg)
         #[arg(short, long, default_value_t = String::from("qr"))]
@@ -96,7 +99,7 @@ fn main() {
             tasks::add_user(output, name, network, phonebook);
         }
         Commands::Debug { onoff } => tasks::debug(onoff),
-        Commands::GenId { name } => tasks::gen_id(name),
+        Commands::GenId { name, output } => tasks::gen_id(name, output),
         Commands::Start {
             network,
             priv_id,

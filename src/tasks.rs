@@ -59,8 +59,10 @@ pub fn debug(onoff: Option<String>) {
 }
 
 /// Generates Tulip ID files
-pub fn gen_id(name: String) {
-    id::gen_id_files(name).expect("gen_id problem");
+/// Arguments
+/// - `name` - Name of the user, which will yield the ID name {public,private}
+pub fn gen_id(name: String, out_dir: String) {
+    id::gen_id_files(name, out_dir).expect("gen_id problem");
 }
 
 /// Starts a Tulip network
@@ -89,6 +91,7 @@ pub fn stop_network(network_path: String) {
     network::stop(network).expect("could not stop network");
 }
 
+/// Generate a WireGuard config file from a Tulip configuration
 pub fn write_wg_conf_file(kind: &str, out_dir: &str, network_path: &str, priv_id_path: &str) {
     let priv_id = id::read_id_file(priv_id_path).expect("could not reading public id");
     let network = network::read_network_file(&network_path).expect("could not read network file");

@@ -1,11 +1,11 @@
+use crate::misc::create_private_file;
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::{self},
+    fs,
     io::Write,
     path::Path,
     process::{Command, Stdio},
 };
-use crate::misc::create_private_file;
 
 #[derive(Debug)]
 pub enum IdError {
@@ -34,7 +34,7 @@ impl From<std::string::FromUtf8Error> for IdError {
     }
 }
 
-/// Returns a WireGuard private key, as a vector of u8 chars.
+/// Returns a WireGuard private key as a vector of u8 chars.
 fn genkey() -> Result<Vec<u8>, IdError> {
     let mut priv_key = Command::new("wg").arg("genkey").output()?.stdout;
     priv_key.pop();
@@ -51,7 +51,9 @@ fn priv_key_to_pub_key(input: &Vec<u8>) -> Result<String, IdError> {
     pub_key_cmd
         .stdin
         .take()
-        .ok_or(IdError::PipeError(String::from("could not read public key from wg")))?
+        .ok_or(IdError::PipeError(String::from(
+            "could not read public key from wg",
+        )))?
         .write(&input)?;
     let mut res = String::from_utf8(pub_key_cmd.wait_with_output()?.stdout)?;
     res.pop();
@@ -72,7 +74,9 @@ pub struct PubId {
     pub public_key: String,
 }
 
-pub fn gen_id_files(name: String) -> Result<(), IdError> {
+/// Generate a public and private Tulip ID and write them to disk
+pub fn gen_id_files(name: String, out_dir: String) -> Result<(), IdError> {
+    // prepare the keys
     let priv_key = genkey()?;
     let pub_key = priv_key_to_pub_key(&priv_key)?;
     let priv_key = String::from_utf8(priv_key)?;
@@ -86,21 +90,27 @@ pub fn gen_id_files(name: String) -> Result<(), IdError> {
     };
     let pub_id_json = serde_json::to_string_pretty(&pub_id_struct)?;
     let priv_id_json = serde_json::to_string_pretty(&priv_id_struct)?;
-    let pub_id_filepath = format!("{}_public_id.json", &name);
-    let priv_id_filepath = format!("{}_private_id.json", &name);
-    if Path::new(&pub_id_filepath).exists() || Path::new(&priv_id_filepath).exists() {
-        Err(IdError::KeyFileExists(format!(
-            "quitting; will not overwrite {} and/or {}",
-            &pub_id_filepath, &priv_id_filepath
+    // prepare the filepaths
+    let pub_id_filepath = Path::new(&out_dir).join(format!("{}_public_id.json", &name));
+    let priv_id_filepath = Path::new(&out_dir).join(format!("{}_private_id.json", &name));
+    if pub_id_filepath.exists() || priv_id_filepath.exists() {
+        Err(IdError::KeyFileExists(String::from(
+            "quitting; will not overwrite existing ID files",
         )))
     } else {
-    let mut pub_id_file = create_private_file(&pub_id_filepath)?;
-    let mut priv_id_file = create_private_file(&priv_id_filepath)?;
-    println!("writing {}", &pub_id_filepath);
-    writeln!(pub_id_file, "{}", pub_id_json)?;
-    println!("writing {}", &priv_id_filepath);
-    writeln!(priv_id_file, "{}", priv_id_json)?;
-    Ok(())
+        let mut pub_id_file = create_private_file(&pub_id_filepath)?;
+        let mut priv_id_file = create_private_file(&priv_id_filepath)?;
+        println!(
+            "writing id file {}",
+            &pub_id_filepath.to_str().unwrap_or_default()
+        );
+        writeln!(pub_id_file, "{}", pub_id_json)?;
+        println!(
+            "writing id file {}",
+            &priv_id_filepath.to_str().unwrap_or_default()
+        );
+        writeln!(priv_id_file, "{}", priv_id_json)?;
+        Ok(())
     }
 }
 
