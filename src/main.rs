@@ -26,15 +26,15 @@ enum Commands {
         #[arg(short, long)]
         name: String,
     },
-    /// Generate a Tulip network config for a Tulip user. For use by a Tulip network admin
-    GenNetConf {
-        /// The nickname of the Tulip user for whom you're generating a QR code
+    /// Add a new user to a Tulip network. For use by a Tulip network admin
+    AddUser {
+        /// The nickname of the Tulip user
         #[arg(short, long)]
         name: String,
         /// Path to this Tulip server's tulip_network.json
         #[arg(long)]
         network: String,
-        /// Output directory for the Tulip network config file
+        /// Output directory for the user's Tulip network config file
         #[arg(short, long, default_value_t = String::from("./"))]
         output: String,
         /// Path to phonebook.json
@@ -87,6 +87,14 @@ enum Commands {
 fn main() {
     let args = Cli::parse();
     match args.command {
+        Commands::AddUser {
+            name,
+            network,
+            output,
+            phonebook,
+        } => {
+            tasks::add_user(output, name, network, phonebook);
+        }
         Commands::Debug { onoff } => tasks::debug(onoff),
         Commands::GenId { name } => tasks::gen_id(name),
         Commands::Start {
@@ -97,7 +105,7 @@ fn main() {
             timeout,
         } => {
             if server && phonebook.is_none() {
-                eprintln!("need a --phonebook in --server mode");
+                eprintln!("--server mode requires a --phonebook argument");
             } else {
                 tasks::start_network(network, priv_id, server, phonebook, timeout);
             }
@@ -106,14 +114,6 @@ fn main() {
         Commands::Test => {
             let version = option_env!("CLI_GIT_COMMIT").unwrap_or("dev");
             println!("{version}");
-        }
-        Commands::GenNetConf {
-            name,
-            network,
-            output,
-            phonebook,
-        } => {
-            tasks::write_network_json_file(output, name, network, phonebook);
         }
         Commands::GenWgConf {
             kind,

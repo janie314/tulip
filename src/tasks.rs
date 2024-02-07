@@ -1,4 +1,3 @@
-use qrcode_generator::QrCodeEcc;
 use crate::{
     id,
     misc::{create_private_file, exec_silent, set_kernel_parameter},
@@ -7,12 +6,39 @@ use crate::{
         wg_conf::{NetworkWgConfInput, WgConfSection},
     },
 };
+use qrcode_generator::QrCodeEcc;
 use std::{io::Write, path::Path};
 
 /*
- * Public task functions
+ * This file consists of public task functions
  * Functions in this file are allowed to panic
  */
+
+/// Adds a user to a Tulip network.
+/// Updates the server's phonebook.json file and outputs a network config file for the user.
+pub fn add_user(out_dir: String, name: String, network_path: String, phonebook_path: String) {
+    let phonebook =
+        phonebook::read_phonebook_file(phonebook_path).expect("could not read public id");
+    match phonebook.get(&name) {
+        Some(user) => {
+            let mut net_conf =
+                network::read_network_file(&network_path).expect("could not read network file");
+            net_conf.user.name = name.clone();
+            net_conf.user.vpn_ip = user.vpn_ip.clone();
+            let net_conf_json =
+                serde_json::to_string_pretty(&net_conf).expect("could not format json");
+            let out_path_aux = Path::new(&out_dir).join(format!("{}_tulip_network.json", &name));
+            let out_path = out_path_aux.to_str().expect("could not concatenate paths");
+            let out_file = create_private_file(&out_path).expect("could not create private id");
+            writeln!(&out_file, "{}", &net_conf_json).expect("could not write network file");
+        }
+        None => {
+            panic!("{} is not a user", &name);
+        }
+    }
+}
+
+/// Enables or disables kernel WireGuard debugging
 pub fn debug(onoff: Option<String>) {
     let cmd = onoff.unwrap_or_default().to_lowercase();
     if cmd == "on" {
@@ -32,10 +58,12 @@ pub fn debug(onoff: Option<String>) {
     }
 }
 
+/// Generates Tulip ID files
 pub fn gen_id(name: String) {
     id::gen_id_files(name).expect("gen_id problem");
 }
 
+/// Starts a Tulip network
 pub fn start_network(
     network_path: String,
     priv_id_path: String,
@@ -55,35 +83,10 @@ pub fn start_network(
     network::start(network, priv_id, server, phonebook, timeout).expect("could not start network");
 }
 
+/// Stops a Tulip network
 pub fn stop_network(network_path: String) {
     let network = network::read_network_file(&network_path).expect("could not read network file");
     network::stop(network).expect("could not stop network");
-}
-
-pub fn write_network_json_file(
-    out_dir: String,
-    name: String,
-    network_path: String,
-    phonebook_path: String,
-) {
-    let phonebook =
-        phonebook::read_phonebook_file(phonebook_path).expect("could not read public id");
-    match phonebook.get(&name) {
-        Some(user) => {
-            let mut net_conf =
-                network::read_network_file(&network_path).expect("could not read network file");
-            net_conf.user.name = name.clone();
-            net_conf.user.vpn_ip = user.vpn_ip.clone();
-            let net_conf_json = serde_json::to_string_pretty(&net_conf).expect("could not format json");
-            let out_path_aux = Path::new(&out_dir).join(format!("{}_tulip_network.json", &name));
-            let out_path = out_path_aux.to_str().expect("could not concatenate paths");
-            let out_file = create_private_file(&out_path).expect("could not create private id");
-            writeln!(&out_file, "{}", &net_conf_json).expect("could not write network file");
-        }
-        None => {
-            panic!("{} is not a user", &name);
-        }
-    }
 }
 
 pub fn write_wg_conf_file(kind: &str, out_dir: &str, network_path: &str, priv_id_path: &str) {

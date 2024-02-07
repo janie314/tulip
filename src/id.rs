@@ -51,7 +51,7 @@ fn priv_key_to_pub_key(input: &Vec<u8>) -> Result<String, IdError> {
     pub_key_cmd
         .stdin
         .take()
-        .ok_or(IdError::PipeError(String::from("no")))?
+        .ok_or(IdError::PipeError(String::from("could not read public key from wg")))?
         .write(&input)?;
     let mut res = String::from_utf8(pub_key_cmd.wait_with_output()?.stdout)?;
     res.pop();
@@ -89,11 +89,11 @@ pub fn gen_id_files(name: String) -> Result<(), IdError> {
     let pub_id_filepath = format!("{}_public_id.json", &name);
     let priv_id_filepath = format!("{}_private_id.json", &name);
     if Path::new(&pub_id_filepath).exists() || Path::new(&priv_id_filepath).exists() {
-        return Err(IdError::KeyFileExists(format!(
-            "i won't overwrite {} and/or {}",
+        Err(IdError::KeyFileExists(format!(
+            "quitting; will not overwrite {} and/or {}",
             &pub_id_filepath, &priv_id_filepath
-        )));
-    }
+        )))
+    } else {
     let mut pub_id_file = create_private_file(&pub_id_filepath)?;
     let mut priv_id_file = create_private_file(&priv_id_filepath)?;
     println!("writing {}", &pub_id_filepath);
@@ -101,6 +101,7 @@ pub fn gen_id_files(name: String) -> Result<(), IdError> {
     println!("writing {}", &priv_id_filepath);
     writeln!(priv_id_file, "{}", priv_id_json)?;
     Ok(())
+    }
 }
 
 pub fn read_id_file(path: &str) -> Result<PrivId, IdError> {
