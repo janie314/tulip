@@ -1,3 +1,8 @@
+/*
+ * This file consists of public task functions
+ * Functions in this file are allowed to panic
+ */
+
 use crate::{
     id,
     misc::{create_private_file, exec, set_kernel_parameter},
@@ -9,13 +14,9 @@ use crate::{
 use qrcode_generator::QrCodeEcc;
 use std::{io::Write, path::Path};
 
-/*
- * This file consists of public task functions
- * Functions in this file are allowed to panic
- */
-
 /// Adds a user to a Tulip network.
-/// Updates the server's phonebook.json file and outputs a network config file for the user.
+/// Updates the server's `phonebook.json` file and outputs a network config file for the user.
+///
 /// Arguments:
 /// - `out_dir` - Output directory to contain `${name}_tulip_network.json`
 /// - `name` - Name of the Tulip network
@@ -42,6 +43,9 @@ pub fn add_user(out_dir: String, name: String, network_path: String, phonebook_p
 }
 
 /// Enables or disables kernel WireGuard debugging
+///
+/// Arguments:
+/// - `onoff` - Should be `Some("on")` or `Some("off")``, case-insensitive
 pub fn debug(onoff: Option<String>) {
     let cmd = onoff.unwrap_or_default().to_lowercase();
     if cmd == "on" {
@@ -62,13 +66,22 @@ pub fn debug(onoff: Option<String>) {
 }
 
 /// Generates Tulip ID files
-/// Arguments
+///
+/// Arguments:
 /// - `name` - Name of the user, which will yield the ID name {public,private}
+/// - `out_dir` - Directory to write `${name}_{public,private}_id.json`
 pub fn gen_id(name: String, out_dir: String) {
     id::gen_id_files(name, out_dir).expect("gen_id problem");
 }
 
 /// Starts a Tulip network
+///
+/// Arguments:
+/// - `network_path` - Path to `tulip_network.json` config file
+/// - `priv_id_path` - Path to `private_id.json` file
+/// - `server` - Whether to run in server mode (enable kernel IP forwarding)
+/// - `phonebook_path` - Path to `phonebook.json` file. Only required for server mode
+/// - `timeout` - Timeout (secs) for querying `/phonebook.json` via HTTP
 pub fn start_network(
     network_path: String,
     priv_id_path: String,
@@ -89,6 +102,9 @@ pub fn start_network(
 }
 
 /// Stops a Tulip network
+///
+/// Arguments:
+/// - `network_path` - Path to `tulip_network.json` config file
 pub fn stop_network(network_path: String) {
     let network = network::read_network_file(&network_path).expect("could not read network file");
     network::stop(network).expect("could not stop network");

@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 mod id;
 mod misc;
@@ -109,6 +110,7 @@ fn main() {
         } => {
             if server && phonebook.is_none() {
                 eprintln!("--server mode requires a --phonebook argument");
+                exit(1)
             } else {
                 tasks::start_network(network, priv_id, server, phonebook, timeout);
             }
