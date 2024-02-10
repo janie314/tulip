@@ -124,7 +124,11 @@ pub fn start(
  */
 pub fn stop(network: Network) -> Result<(), NetworkError> {
     let network_name = format!("tulip_{}", &network.name[..8]);
-    exec("sudo", ["ip", "link", "delete", "dev", &network_name])?;
+    exec(
+        "sudo",
+        ["ip", "link", "delete", "dev", &network_name],
+        false,
+    )?;
     Ok(())
 }
 
@@ -141,6 +145,7 @@ fn add_wg_interface(
     exec(
         "sudo",
         ["ip", "link", "add", &network_name, "type", "wireguard"],
+        false,
     )?;
     exec(
         "sudo",
@@ -153,12 +158,18 @@ fn add_wg_interface(
             "dev",
             &network_name,
         ],
+        false,
     )?;
     exec(
         "sudo",
         ["ip", "link", "set", "mtu", "1420", "dev", &network_name],
+        false,
     )?;
-    exec("sudo", ["ip", "link", "set", "up", "dev", &network_name])?;
+    exec(
+        "sudo",
+        ["ip", "link", "set", "up", "dev", &network_name],
+        false,
+    )?;
     exec(
         "sudo",
         [
@@ -170,6 +181,7 @@ fn add_wg_interface(
             "dev",
             &network_name,
         ],
+        false,
     )?;
     let path = Path::new("/tmp").join(format!("{}.conf", &network_name));
     let mut wg_conf = create_private_file(&path)?;
@@ -185,7 +197,16 @@ fn add_wg_interface(
             port: network.user.port
         })
     )?;
-    exec("sudo", ["wg", "setconf", &network_name, &path])?;
+    exec(
+        "sudo",
+        [
+            "wg",
+            "setconf",
+            &network_name,
+            path.to_str().unwrap_or_default(),
+        ],
+        false,
+    )?;
     /*
      * Add phonebook users to the WireGuard config
      * If in server mode, the `phonebook` arg here will be Some
@@ -198,9 +219,18 @@ fn add_wg_interface(
             curl_phonebook_list(&network.public_endpoints, timeout)
         }
     }?;
-    let path = format!("/tmp/{}_phonebook.conf", &network_name);
+    let path = Path::new("/tmp").join(format!("{}_phonebook.conf", &network_name));
     let mut phonebook_wg_conf = create_private_file(&path)?;
     writeln!(phonebook_wg_conf, "{}", phonebook.wg_conf_section(()))?;
-    exec("sudo", ["wg", "addconf", &network_name, &path])?;
+    exec(
+        "sudo",
+        [
+            "wg",
+            "addconf",
+            &network_name,
+            path.to_str().unwrap_or_default(),
+        ],
+        false,
+    )?;
     Ok(())
 }

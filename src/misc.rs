@@ -9,6 +9,7 @@ use std::{
     thread::sleep,
 };
 
+/// Open a R/W file handle with 0600 permissions
 pub fn create_private_file(path: &PathBuf) -> Result<fs::File, io::Error> {
     OpenOptions::new()
         .create(true)
@@ -19,6 +20,7 @@ pub fn create_private_file(path: &PathBuf) -> Result<fs::File, io::Error> {
         .open(&path)
 }
 
+/// Count down from n seconds
 pub fn countdown(n: i64) -> Result<(), std::io::Error> {
     if n <= 0 {
         Ok(())
@@ -33,11 +35,13 @@ pub fn countdown(n: i64) -> Result<(), std::io::Error> {
     }
 }
 
+/// Write to a Linux kernel parameter virtual file (e.g. `/proc/sys/net/ipv6/idgen_delay`)
 pub fn set_kernel_parameter(path: &str, value: &str) -> Result<(), std::io::Error> {
     fs::write(path, value)
 }
 
-pub fn exec<I, S>(cmd: &str, args: I) -> Result<(), std::io::Error>
+/// Execute a shell command
+pub fn exec<I, S>(cmd: &str, args: I, silent: bool) -> Result<(), std::io::Error>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -45,22 +49,16 @@ where
     Command::new(cmd)
         .args(args)
         .stdin(Stdio::inherit())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()?
-        .wait()?;
-    Ok(())
-}
-
-pub fn exec_silent<I, S>(cmd: &str, args: I) -> Result<(), std::io::Error>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    Command::new(cmd)
-        .args(args)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stdout(if silent {
+            Stdio::null()
+        } else {
+            Stdio::inherit()
+        })
+        .stderr(if silent {
+            Stdio::null()
+        } else {
+            Stdio::inherit()
+        })
         .spawn()?
         .wait()?;
     Ok(())

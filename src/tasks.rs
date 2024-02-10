@@ -1,6 +1,6 @@
 use crate::{
     id,
-    misc::{create_private_file, exec_silent, set_kernel_parameter},
+    misc::{create_private_file, exec, set_kernel_parameter},
     network::{
         self, phonebook,
         wg_conf::{NetworkWgConfInput, WgConfSection},
@@ -27,8 +27,7 @@ pub fn add_user(out_dir: String, name: String, network_path: String, phonebook_p
             net_conf.user.vpn_ip = user.vpn_ip.clone();
             let net_conf_json =
                 serde_json::to_string_pretty(&net_conf).expect("could not format json");
-            let out_path_aux = Path::new(&out_dir).join(format!("{}_tulip_network.json", &name));
-            let out_path = out_path_aux.to_str().expect("could not concatenate paths");
+            let out_path = Path::new(&out_dir).join(format!("{}_tulip_network.json", &name));
             let out_file = create_private_file(&out_path).expect("could not create private id");
             writeln!(&out_file, "{}", &net_conf_json).expect("could not write network file");
         }
@@ -118,19 +117,19 @@ pub fn write_wg_conf_file(kind: &str, out_dir: &str, network_path: &str, priv_id
                     None::<&str>,
                 )
                 .expect("qr code issues");
-                let out_path_aux = Path::new("/tmp").join(format!("{}_tulip_network.svg", &name));
-                let out_path = out_path_aux.to_str().expect("path concat issue");
+                let out_path = Path::new("/tmp").join(format!("{}_tulip_network.svg", &name));
                 let out_file = create_private_file(&out_path).expect("could not create private id");
                 write!(&out_file, "{}", &qr).expect("could not write network file");
-                println!("opening {} with your default SVG viewer", &out_path);
-                exec_silent("xdg-open", [&out_path]).expect("could not open svg");
+                println!(
+                    "opening {} with your default SVG viewer",
+                    &out_path.to_str().unwrap_or_default()
+                );
+                exec("xdg-open", [&out_path], true).expect("could not open svg");
             } else {
-                let out_path_aux =
-                    Path::new(&out_dir).join(format!("{}_tulip_network.conf", &name));
-                let out_path = out_path_aux.to_str().expect("path concat issue");
+                let out_path = Path::new(&out_dir).join(format!("{}_tulip_network.conf", &name));
                 let out_file = create_private_file(&out_path).expect("could not create private id");
                 write!(&out_file, "{}", &wg_conf).expect("could not write network file");
-                println!("wrote to {}", &out_path);
+                println!("wrote to {}", &out_path.to_str().unwrap_or_default());
             }
         }
         None => {
