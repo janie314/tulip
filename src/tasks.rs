@@ -16,6 +16,10 @@ use std::{io::Write, path::Path};
 
 /// Adds a user to a Tulip network.
 /// Updates the server's phonebook.json file and outputs a network config file for the user.
+/// Arguments:
+/// - `out_dir` - Output directory to contain `${name}_tulip_network.json`
+/// - `name` - Name of the Tulip network
+/// - `name` - Name of the Tulip network
 pub fn add_user(out_dir: String, name: String, network_path: String, phonebook_path: String) {
     let phonebook =
         phonebook::read_phonebook_file(phonebook_path).expect("could not read public id");
